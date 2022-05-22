@@ -168,128 +168,118 @@ find_next_word	endp
 ; Check for matching words horizontally, left to right and right to left <--->
 ; starting from pointerX and pointerY coordinates
 check_horizontally	PROC
-		;reset some variables
+		; reset some variables
 		mov 	currentOffset, 0
 		mov 	wordNumber, 0
 
+		; copy pointers for later
 		mov		al, pointerX
 		mov		savedPointerX, al
 		mov		al, pointerY
 		mov		savedPointerY, al
 
-	check_horizontally_loop_zero:
-
-		mov 	tempp, 1
+	check_horizontally_loop_main:
 		call 	find_next_word
 
+		; if there is no next word return
 		cmp		ax, 69h
-		jne		check_horizontally_loop_one
+		jne		check_horizontally_loop_pointer_left
 		ret
 
-		;firstly look left to right --->
-		;loop as far left as we can
-	check_horizontally_loop_one:
-		dec		pointerX
-		dec		pointerX
+		; firstly look left to right --->
+		; loop as far left as we can
+	check_horizontally_loop_pointer_left:
+		sub		pointerX, 2h
 		call	read_char_from_screen
 		cmp		ah, cor
-		je		check_horizontally_loop_one
+		je		check_horizontally_loop_pointer_left
 
 		; go back one, since we went one too far
-		inc		pointerX
-		inc		pointerX
+		add 	pointerX, 2h
 
 		xor		dx, dx
-	check_horizontally_loop_two:
-		;make sure that char at pointerX pointerY is selected
+
+	check_horizontally_loop_left:
+		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
 		cmp		ah, cor
-		je		conti
+		je		check_horizontally_left_character_selected
 		jmp		check_horizontally_next_direction
-	conti:
-		xor 	bx, bx
-		mov		bx, tempp
+
+	check_horizontally_left_character_selected:
+		mov		bx, dx
+		inc		bx
 		mov     cl, [si + bx]
 
-		;al comes from call to read_char_from_screen, cl comes from predefined string with winning words
-		;if both are the same we will continue to check, if not we will jump to checking in opposite direction
+		; al comes from call to read_char_from_screen, cl comes from predefined string with winning words
+		; if both are the same we will continue to check, if not we will jump to checking in opposite direction
 		cmp		al, cl
 		jne		check_horizontally_next_direction
 
-		inc		tempp
-		inc		pointerX
-		inc		pointerX
+		add		pointerX, 2h
 		inc 	dx
-		;compare 'counter' (dx) with word length
-		;if they are equal we (user) have found a match
+
+		; compare 'counter' (dx) with word length
+		; if they are equal we (user) have found a match
 		cmp     dx, currentLength
-		je     found
-		jmp check_horizontally_loop_two
-	found:
+		je     check_horizontally_left_found
+		jmp check_horizontally_loop_left
+
+	check_horizontally_left_found:
 		call mark_found_word
 		ret
 
 
 	check_horizontally_next_direction:
-		;now we look right to left <---
+		; now we look right to left <---
+		; start by reseting the pointers
 		mov		al, savedPointerX
 		mov		pointerX, al
 		mov		al, savedPointerY
 		mov		pointerY, al
 
-		; dec		currentLength
-		; dec		currentLength
-
-
-		;loop as far right as we can
-	check_horizontally_loop_three:
-		inc		pointerX
-		inc		pointerX
+		; loop as far right as we can
+	check_horizontally_loop_pointer_right:
+		add		pointerX, 2h
 		call	read_char_from_screen
 		cmp		ah, cor
-		je		check_horizontally_loop_three
+		je		check_horizontally_loop_pointer_right
 
 		; go back one, since we went one too far
-		dec		pointerX
-		dec		pointerX
+		sub		pointerX, 2h
 
 		xor		dx, dx
-		; mov		dx, 0
-		; dec		dx
-		; dec		dx
-		; dec		dx
-		; dec		dx
+
 	check_horizontally_loop_four:
-		;make sure that char at pointerX pointerY is selected
+		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
 		cmp		ah, cor
-		je		asdwqe
-		jmp		afsgghjh
-	asdwqe:
-		xor 	bx, bx
+		je		check_horizontally_right_character_selected
+		jmp		check_horizontally_not_found
+
+	check_horizontally_right_character_selected:
 		mov		bx, dx
-		inc bx
+		inc 	bx
 		mov     cl, [si + bx]
 
-		;al comes from call to read_char_from_screen, cl comes from predefined string with winning words
-		;if both are the same we will continue to check, if not we will jump to checking in opposite direction
 		cmp		al, cl
-		jne		afsgghjh
+		jne		check_horizontally_not_found
 
-		dec		tempp
-		dec		pointerX
-		dec		pointerX
+		sub		pointerX, 2h
 		inc		dx
+
 		;compare 'counter' (dx) with word length
 		;if they are equal we (user) have found a match
 		cmp     dx, currentLength
-		je     found2
+		je     check_horizontally_right_found
 		jmp check_horizontally_loop_four
-	found2:
+
+	check_horizontally_right_found:
 		call mark_found_word
 		ret
-	afsgghjh:
-		jmp check_horizontally_loop_zero
+
+	check_horizontally_not_found:
+		jmp check_horizontally_loop_main
 check_horizontally	endp
 ;########################################################################
 

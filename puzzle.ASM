@@ -407,7 +407,130 @@ check_vertically	endp
 ; Check for matching words diagonally left to righ \
 ; starting from pointerX and pointerY coordinates
 check_diagonally_left_right	PROC
-		mov		ax, 69h
+		; reset some variables
+		mov 	currentOffset, 0
+		mov 	wordNumber, 0
+
+		; copy pointers for later
+		mov		al, pointerX
+		mov		savedPointerX, al
+		mov		al, pointerY
+		mov		savedPointerY, al
+
+	check_diagonally_left_right_loop_main:
+		; start by reseting the pointers
+		mov		al, savedPointerX
+		mov		pointerX, al
+		mov		al, savedPointerY
+		mov		pointerY, al
+
+		call 	find_next_word
+
+		; if there is no next word return
+		cmp		ax, 69h
+		jne		check_diagonally_left_right_loop_pointer_up
+		ret
+
+		; firstly look up to down
+		; loop as far up and left as we can
+	check_diagonally_left_right_loop_pointer_up:
+		dec		pointerY
+		sub		pointerX, 2h
+		call	read_char_from_screen
+		cmp		ah, cor
+		je		check_diagonally_left_right_loop_pointer_up
+
+		; go back one, since we went one too far
+		inc		pointerY
+		add		pointerX, 2h
+
+		xor		dx, dx
+
+	check_diagonally_left_right_loop_up:
+		; make sure that char at pointerX pointerY is selected
+		call	read_char_from_screen
+		cmp		ah, cor
+		je		check_diagonally_left_right_up_character_selected
+		jmp		check_diagonally_left_right_next_direction
+
+	check_diagonally_left_right_up_character_selected:
+		mov		bx, dx
+		inc		bx
+		mov     cl, [si + bx]
+
+		; al comes from call to read_char_from_screen, cl comes from predefined string with winning words
+		; if both are the same we will continue to check, if not we will jump to checking in opposite direction
+		cmp		al, cl
+		jne		check_diagonally_left_right_next_direction
+
+		inc 	pointerY
+		add		pointerX, 2h
+		inc 	dx
+
+		; compare 'counter' (dx) with word length
+		; if they are equal we (user) have found a match
+		cmp     dx, currentLength
+		je     check_diagonally_left_right_up_found
+		jmp check_diagonally_left_right_loop_up
+
+	check_diagonally_left_right_up_found:
+		call mark_found_word
+		ret
+
+
+	check_diagonally_left_right_next_direction:
+		; now we look down to up
+		; start by reseting the pointers
+		mov		al, savedPointerX
+		mov		pointerX, al
+		mov		al, savedPointerY
+		mov		pointerY, al
+
+		; loop as far down and right as we can
+	check_diagonally_left_right_loop_pointer_down:
+		inc		pointerY
+		add		pointerX, 2h
+		call	read_char_from_screen
+		cmp		ah, cor
+		je		check_diagonally_left_right_loop_pointer_down
+
+		; go back one, since we went one too far
+		dec		pointerY
+		sub		pointerX, 2h
+
+		xor		dx, dx
+
+	check_diagonally_left_right_loop_down:
+		; make sure that char at pointerX pointerY is selected
+		call	read_char_from_screen
+		cmp		ah, cor
+		je		check_diagonally_left_right_down_character_selected
+		jmp		check_diagonally_left_right_not_found
+
+	check_diagonally_left_right_down_character_selected:
+		mov		bx, dx
+		inc 	bx
+		mov     cl, [si + bx]
+
+		cmp		al, cl
+		jne		check_diagonally_left_right_not_found
+
+		dec		pointerY
+		sub		pointerX, 2h
+		inc		dx
+
+		;compare 'counter' (dx) with word length
+		;if they are equal we (user) have found a match
+		cmp     dx, currentLength
+		je     check_diagonally_left_right_down_found
+		jmp check_diagonally_left_right_loop_down
+
+	check_diagonally_left_right_down_found:
+		call mark_found_word
+		ret
+
+	check_diagonally_left_right_not_found:
+		jmp check_diagonally_left_right_loop_main
 check_diagonally_left_right	endp
 ;########################################################################
 

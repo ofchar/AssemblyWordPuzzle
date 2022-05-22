@@ -179,6 +179,12 @@ check_horizontally	PROC
 		mov		savedPointerY, al
 
 	check_horizontally_loop_main:
+		; start by reseting the pointers
+		mov		al, savedPointerX
+		mov		pointerX, al
+		mov		al, savedPointerY
+		mov		pointerY, al
+
 		call 	find_next_word
 
 		; if there is no next word return
@@ -299,6 +305,12 @@ check_vertically	PROC
 		mov		savedPointerY, al
 
 	check_vertically_loop_main:
+		; start by reseting the pointers
+		mov		al, savedPointerX
+		mov		pointerX, al
+		mov		al, savedPointerY
+		mov		pointerY, al
+
 		call 	find_next_word
 
 		; if there is no next word return

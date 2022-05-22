@@ -31,7 +31,7 @@ dseg    segment para public 'data'
 		currentLength					dw		0
 		tempp							dw		0
 
-		wordNumber						db		1
+		wordNumber						db		0
 dseg    ends
 
 
@@ -105,10 +105,10 @@ read_char_from_screen	endp
 ;########################################################################
 ; mark a word that has been just found
 mark_found_word	PROC
-		xor ax,ax
-		mov al, wordNumber
-		mov	pointerX, 1Dh
-		mov pointerY, al
+		xor 	ax, ax
+		mov 	al, wordNumber
+		mov		pointerX, 1Dh
+		mov 	pointerY, al
 	mark_found_word_loop:
 		call read_char_from_screen
 
@@ -148,6 +148,7 @@ find_next_word	PROC
 		add 	ax, 1
 		mov 	currentOffset, ax
 
+		; inc 	currentLength
 		dec 	currentLength
 
 		xor		ax, ax
@@ -168,8 +169,8 @@ find_next_word	endp
 ; starting from pointerX and pointerY coordinates
 check_horizontally	PROC
 		;reset some variables
-		mov currentOffset, 0
-		mov wordNumber, 0
+		mov 	currentOffset, 0
+		mov 	wordNumber, 0
 
 		mov		al, pointerX
 		mov		savedPointerX, al
@@ -178,8 +179,8 @@ check_horizontally	PROC
 
 	check_horizontally_loop_zero:
 
-		mov tempp, 1
-		call find_next_word
+		mov 	tempp, 1
+		call 	find_next_word
 
 		cmp		ax, 69h
 		jne		check_horizontally_loop_one
@@ -231,17 +232,14 @@ check_horizontally	PROC
 
 	check_horizontally_next_direction:
 		;now we look right to left <---
-
 		mov		al, savedPointerX
 		mov		pointerX, al
 		mov		al, savedPointerY
 		mov		pointerY, al
 
-		mov		ax, currentLength
-		mov		tempp, ax
+		; dec		currentLength
+		; dec		currentLength
 
-		dec 	tempp
-		; inc 	tempp
 
 		;loop as far right as we can
 	check_horizontally_loop_three:
@@ -256,9 +254,11 @@ check_horizontally	PROC
 		dec		pointerX
 
 		xor		dx, dx
-		mov		dx, currentLength
-		dec		dx
-		dec		dx
+		; mov		dx, 0
+		; dec		dx
+		; dec		dx
+		; dec		dx
+		; dec		dx
 	check_horizontally_loop_four:
 		;make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
@@ -268,6 +268,7 @@ check_horizontally	PROC
 	asdwqe:
 		xor 	bx, bx
 		mov		bx, dx
+		inc bx
 		mov     cl, [si + bx]
 
 		;al comes from call to read_char_from_screen, cl comes from predefined string with winning words
@@ -278,10 +279,10 @@ check_horizontally	PROC
 		dec		tempp
 		dec		pointerX
 		dec		pointerX
-		dec 	dx
+		inc		dx
 		;compare 'counter' (dx) with word length
 		;if they are equal we (user) have found a match
-		cmp     dx, 0h
+		cmp     dx, currentLength
 		je     found2
 		jmp check_horizontally_loop_four
 	found2:
@@ -290,6 +291,120 @@ check_horizontally	PROC
 	afsgghjh:
 		jmp check_horizontally_loop_zero
 check_horizontally	endp
+;########################################################################
+
+
+;########################################################################
+; Check for matching words vertically, up to down, and down to up
+; starting from pointerX and pointerY coordinates
+check_vertically	PROC
+		;reset some variables
+		mov 	currentOffset, 0
+		mov 	wordNumber, 0
+
+		mov		al, pointerX
+		mov		savedPointerX, al
+		mov		al, pointerY
+		mov		savedPointerY, al
+
+	check_vertically_loop_zero:
+		mov 	tempp, 1
+		call 	find_next_word
+
+		cmp		ax, 69h
+		jne		check_vertically_loop_one
+		ret
+
+		;firstly look up to down
+		;loop as far up as we can
+	check_vertically_loop_one:
+		dec		pointerY
+		call	read_char_from_screen
+		cmp		ah, cor
+		je		check_vertically_loop_one
+
+		; go back one, since we went one too far
+		inc		pointerY
+
+		xor		dx, dx
+	check_vertically_loop_two:
+		;make sure that char at pointerX pointerY is selected
+		call	read_char_from_screen
+		cmp		ah, cor
+		je		conti2
+		jmp		check_vertically_next_direction
+	conti2:
+		xor 	bx, bx
+		mov		bx, tempp
+		mov     cl, [si + bx]
+
+		;al comes from call to read_char_from_screen, cl comes from predefined string with winning words
+		;if both are the same we will continue to check, if not we will jump to checking in opposite direction
+		cmp		al, cl
+		jne		check_vertically_next_direction
+
+		inc		tempp
+		inc		pointerY
+		inc 	dx
+		;compare 'counter' (dx) with word length
+		;if they are equal we (user) have found a match
+		cmp     dx, currentLength
+		je     found3
+		jmp check_vertically_loop_two
+	found3:
+		call mark_found_word
+		ret
+
+
+	check_vertically_next_direction:
+		;now we look down to up
+		mov		al, savedPointerX
+		mov		pointerX, al
+		mov		al, savedPointerY
+		mov		pointerY, al
+
+		;loop as far down as we can
+	check_vertically_loop_three:
+		inc		pointerY
+		call	read_char_from_screen
+		cmp		ah, cor
+		je		check_vertically_loop_three
+
+		; go back one, since we went one too far
+		dec		pointerY
+
+		xor		dx, dx
+	check_vertically_loop_four:
+		;make sure that char at pointerX pointerY is selected
+		call	read_char_from_screen
+		cmp		ah, cor
+		je		asdsadsada
+		jmp		eretytrew
+	asdsadsada:
+		xor 	bx, bx
+		mov		bx, dx
+		inc bx
+		mov     cl, [si + bx]
+
+		;al comes from call to read_char_from_screen, cl comes from predefined string with winning words
+		;if both are the same we will continue to check, if not we will jump to checking in opposite direction
+		cmp		al, cl
+		jne		eretytrew
+
+		dec		tempp
+		dec		pointerY
+		inc		dx
+		;compare 'counter' (dx) with word length
+		;if they are equal we (user) have found a match
+		cmp     dx, currentLength
+		je     found4
+		jmp check_vertically_loop_four
+	found4:
+		call mark_found_word
+		ret
+	eretytrew:
+		jmp check_vertically_loop_zero
+check_vertically	endp
 ;########################################################################
 
 ;########################################################################
@@ -394,6 +509,7 @@ process_input	PROC
 		call	read_char_from_screen
 		cmp		ah, cor
 		jne		process_input_check_c
+		call	check_vertically
 
 	process_input_check_c:
 		add		pointerX, 2h

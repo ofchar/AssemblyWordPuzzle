@@ -765,7 +765,7 @@ process_input	PROC
 		call	read_char_from_screen	; read whats on the screen and check its attribute
 		cmp		ah, cor
 		jne		process_input_check_b 	; if character at A is not selected we jump to check B
-		; if it is we need to check further
+		call	check_diagonally_left_right
 
 	process_input_check_b:
 		add		pointerX, 2h
@@ -779,6 +779,7 @@ process_input	PROC
 		call	read_char_from_screen
 		cmp		ah, cor
 		jne		process_input_check_d
+		call 	check_diagonally_right_left
 
 	process_input_check_d:
 		sub		pointerX, 4h
@@ -789,7 +790,35 @@ process_input	PROC
 		call	check_horizontally
 
 	process_input_check_e:
+		add		pointerX, 4h
+		call	read_char_from_screen
+		cmp		ah, cor
+		jne		process_input_check_f
+		call 	check_horizontally
 
+	process_input_check_f:
+		sub		pointerX, 4h
+		add		pointerY, 1h
+		call	read_char_from_screen
+		cmp		ah, cor
+		jne		process_input_check_g
+		call	check_diagonally_right_left
+
+	process_input_check_g:
+		add		pointerX, 2h
+		call	read_char_from_screen
+		cmp		ah, cor
+		jne		process_input_check_h
+		call	check_vertically
+
+	process_input_check_h:
+		add		pointerX, 2h
+		call 	read_char_from_screen
+		cmp		ah, cor
+		jne		jmp_process_input_loop
+		call	check_diagonally_left_right
+
+	jmp_process_input_loop:
 		jmp		process_input_loop
 process_input	endp
 ;########################################################################

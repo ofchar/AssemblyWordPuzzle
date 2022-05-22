@@ -250,7 +250,7 @@ check_horizontally	PROC
 
 		xor		dx, dx
 
-	check_horizontally_loop_four:
+	check_horizontally_loop_right:
 		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
 		cmp		ah, cor
@@ -272,7 +272,7 @@ check_horizontally	PROC
 		;if they are equal we (user) have found a match
 		cmp     dx, currentLength
 		je     check_horizontally_right_found
-		jmp check_horizontally_loop_four
+		jmp check_horizontally_loop_right
 
 	check_horizontally_right_found:
 		call mark_found_word
@@ -288,112 +288,118 @@ check_horizontally	endp
 ; Check for matching words vertically, up to down, and down to up
 ; starting from pointerX and pointerY coordinates
 check_vertically	PROC
-		;reset some variables
+		; reset some variables
 		mov 	currentOffset, 0
 		mov 	wordNumber, 0
 
+		; copy pointers for later
 		mov		al, pointerX
 		mov		savedPointerX, al
 		mov		al, pointerY
 		mov		savedPointerY, al
 
-	check_vertically_loop_zero:
-		mov 	tempp, 1
+	check_vertically_loop_main:
 		call 	find_next_word
 
+		; if there is no next word return
 		cmp		ax, 69h
-		jne		check_vertically_loop_one
+		jne		check_vertically_loop_pointer_up
 		ret
 
-		;firstly look up to down
-		;loop as far up as we can
-	check_vertically_loop_one:
+		; firstly look up to down
+		; loop as far up as we can
+	check_vertically_loop_pointer_up:
 		dec		pointerY
 		call	read_char_from_screen
 		cmp		ah, cor
-		je		check_vertically_loop_one
+		je		check_vertically_loop_pointer_up
 
 		; go back one, since we went one too far
 		inc		pointerY
 
 		xor		dx, dx
-	check_vertically_loop_two:
-		;make sure that char at pointerX pointerY is selected
+
+	check_vertically_loop_up:
+		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
 		cmp		ah, cor
-		je		conti2
+		je		check_vertically_up_character_selected
 		jmp		check_vertically_next_direction
-	conti2:
-		xor 	bx, bx
-		mov		bx, tempp
+
+	check_vertically_up_character_selected:
+		mov		bx, dx
+		inc		bx
 		mov     cl, [si + bx]
 
-		;al comes from call to read_char_from_screen, cl comes from predefined string with winning words
-		;if both are the same we will continue to check, if not we will jump to checking in opposite direction
+		; al comes from call to read_char_from_screen, cl comes from predefined string with winning words
+		; if both are the same we will continue to check, if not we will jump to checking in opposite direction
 		cmp		al, cl
 		jne		check_vertically_next_direction
 
-		inc		tempp
-		inc		pointerY
+		inc 	pointerY
 		inc 	dx
-		;compare 'counter' (dx) with word length
-		;if they are equal we (user) have found a match
+
+		; compare 'counter' (dx) with word length
+		; if they are equal we (user) have found a match
 		cmp     dx, currentLength
-		je     found3
-		jmp check_vertically_loop_two
-	found3:
+		je     check_vertically_up_found
+		jmp check_vertically_loop_up
+
+	check_vertically_up_found:
 		call mark_found_word
 		ret
 
 
 	check_vertically_next_direction:
-		;now we look down to up
+		; now we look down to up
+		; start by reseting the pointers
 		mov		al, savedPointerX
 		mov		pointerX, al
 		mov		al, savedPointerY
 		mov		pointerY, al
 
-		;loop as far down as we can
-	check_vertically_loop_three:
+		; loop as far down as we can
+	check_vertically_loop_pointer_down:
 		inc		pointerY
 		call	read_char_from_screen
 		cmp		ah, cor
-		je		check_vertically_loop_three
+		je		check_vertically_loop_pointer_down
 
 		; go back one, since we went one too far
 		dec		pointerY
 
 		xor		dx, dx
-	check_vertically_loop_four:
-		;make sure that char at pointerX pointerY is selected
+
+	check_vertically_loop_down:
+		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
 		cmp		ah, cor
-		je		asdsadsada
-		jmp		eretytrew
-	asdsadsada:
-		xor 	bx, bx
+		je		check_vertically_down_character_selected
+		jmp		check_vertically_not_found
+
+	check_vertically_down_character_selected:
 		mov		bx, dx
-		inc bx
+		inc 	bx
 		mov     cl, [si + bx]
 
-		;al comes from call to read_char_from_screen, cl comes from predefined string with winning words
-		;if both are the same we will continue to check, if not we will jump to checking in opposite direction
 		cmp		al, cl
-		jne		eretytrew
+		jne		check_vertically_not_found
 
-		dec		tempp
 		dec		pointerY
 		inc		dx
+
 		;compare 'counter' (dx) with word length
 		;if they are equal we (user) have found a match
 		cmp     dx, currentLength
-		je     found4
-		jmp check_vertically_loop_four
-	found4:
+		je     check_vertically_down_found
+		jmp check_vertically_loop_down
+
+	check_vertically_down_found:
 		call mark_found_word
 		ret
-	eretytrew:
-		jmp check_vertically_loop_zero
+
+	check_vertically_not_found:
+		jmp check_vertically_loop_main
 check_vertically	endp
 ;########################################################################
 

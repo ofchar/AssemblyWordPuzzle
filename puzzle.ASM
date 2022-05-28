@@ -2,13 +2,13 @@
 .model small
 .stack 2048h
 
-dseg    segment para public 'data'
-        error_opening_file_message      db      'Error trying to open the file$'
-        error_reading_file_message    	db      'Error trying to read from the file$'
-        error_closing_file_message      db      'Error trying to close the file$'
-        file         					db      'data.TXT',0
-        file_handle      				dw      0
-        read_character        			db      ?
+dseg	segment para public 'data'
+		error_opening_file_message		db		'Error trying to open the file$'
+		error_reading_file_message		db		'Error trying to read from the file$'
+		error_closing_file_message		db		'Error trying to close the file$'
+		file							db		'data.TXT',0
+		file_handle						dw		0
+		read_character					db		?
 		read_lines						db		0	; amount of already read lines from file
 
 		Car								db		32	; save a screen character
@@ -23,25 +23,25 @@ dseg    segment para public 'data'
 		savedPointerY					db		0
 		chuj							db		10h
 
-		stringus 						db 		' '
- 		HELLO_LEN 						db 		5
+		stringus 						db		' '
+ 		HELLO_LEN 						db		5
 
-		wordsToFind 					dw 		12*15 dup(0) ;so we asumme there must be at most 12 words to find, with at most 15 characters each
+		wordsToFind 					dw		12*15 dup(0) ; so we asumme there must be at most 12 words to find, with at most 15 characters each
 		currentOffset					dw		0
 		currentLength					dw		0
 		tempp							dw		0
 
 		wordNumber						db		0
-dseg    ends
+dseg	ends
 
 
-cseg    segment para public 'code'
+cseg   	segment para public 'code'
 		assume  cs:cseg, ds:dseg
 
 
 ;########################################################################
-;Put cursor to X Y coordinates
-goto_xy	macro		POSx,POSy
+; Put cursor to X Y coordinates
+goto_xy	macro	POSx,POSy
 		push 	dx
 
 		mov		ah,02h
@@ -54,7 +54,7 @@ goto_xy	macro		POSx,POSy
 endm
 
 ;########################################################################
-;Clear screen
+; Clear screen
 clear_screen	proc
 		xor		bx,bx
 		mov		cx,25*80
@@ -127,11 +127,11 @@ mark_found_word	endp
 
 
 ;########################################################################
-;find next word in the wordsToFind array and find its length
-;if there is no word to be found ax will be set to 69, otherwise to 420
+; find next word in the wordsToFind array and find its length
+; if there is no word to be found ax will be set to 69, otherwise to 420
 find_next_word	PROC
 		inc		wordNumber
-		lea     si, wordsToFind
+		lea		si, wordsToFind
 		add		si, currentOffset
 
 		mov 	currentLength, 0
@@ -227,12 +227,12 @@ check_horizontally	PROC
 
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
-		cmp     dx, currentLength
-		je     check_horizontally_left_found
-		jmp check_horizontally_loop_left
+		cmp		dx, currentLength
+		je		check_horizontally_left_found
+		jmp 	check_horizontally_loop_left
 
 	check_horizontally_left_found:
-		call mark_found_word
+		call 	mark_found_word
 		ret
 
 
@@ -266,7 +266,7 @@ check_horizontally	PROC
 	check_horizontally_right_character_selected:
 		mov		bx, dx
 		inc 	bx
-		mov     cl, [si + bx]
+		mov		cl, [si + bx]
 
 		cmp		al, cl
 		jne		check_horizontally_not_found
@@ -274,18 +274,18 @@ check_horizontally	PROC
 		sub		pointerX, 2h
 		inc		dx
 
-		;compare 'counter' (dx) with word length
-		;if they are equal we (user) have found a match
-		cmp     dx, currentLength
-		je     check_horizontally_right_found
-		jmp check_horizontally_loop_right
+		; compare 'counter' (dx) with word length
+		; if they are equal we (user) have found a match
+		cmp		dx, currentLength
+		je		check_horizontally_right_found
+		jmp		check_horizontally_loop_right
 
 	check_horizontally_right_found:
-		call mark_found_word
+		call 	mark_found_word
 		ret
 
 	check_horizontally_not_found:
-		jmp check_horizontally_loop_main
+		jmp		check_horizontally_loop_main
 check_horizontally	endp
 ;########################################################################
 
@@ -353,12 +353,12 @@ check_vertically	PROC
 
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
-		cmp     dx, currentLength
-		je     check_vertically_up_found
-		jmp check_vertically_loop_up
+		cmp		dx, currentLength
+		je		check_vertically_up_found
+		jmp		check_vertically_loop_up
 
 	check_vertically_up_found:
-		call mark_found_word
+		call	mark_found_word
 		ret
 
 
@@ -400,14 +400,14 @@ check_vertically	PROC
 		dec		pointerY
 		inc		dx
 
-		;compare 'counter' (dx) with word length
-		;if they are equal we (user) have found a match
-		cmp     dx, currentLength
-		je     check_vertically_down_found
-		jmp check_vertically_loop_down
+		; compare 'counter' (dx) with word length
+		; if they are equal we (user) have found a match
+		cmp		dx, currentLength
+		je		check_vertically_down_found
+		jmp		check_vertically_loop_down
 
 	check_vertically_down_found:
-		call mark_found_word
+		call	mark_found_word
 		ret
 
 	check_vertically_not_found:
@@ -481,12 +481,12 @@ check_diagonally_left_right	PROC
 
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
-		cmp     dx, currentLength
-		je     check_diagonally_left_right_up_found
-		jmp check_diagonally_left_right_loop_up
+		cmp		dx, currentLength
+		je		check_diagonally_left_right_up_found
+		jmp		check_diagonally_left_right_loop_up
 
 	check_diagonally_left_right_up_found:
-		call mark_found_word
+		call	mark_found_word
 		ret
 
 
@@ -531,18 +531,18 @@ check_diagonally_left_right	PROC
 		sub		pointerX, 2h
 		inc		dx
 
-		;compare 'counter' (dx) with word length
-		;if they are equal we (user) have found a match
-		cmp     dx, currentLength
-		je     check_diagonally_left_right_down_found
-		jmp check_diagonally_left_right_loop_down
+		; compare 'counter' (dx) with word length
+		; if they are equal we (user) have found a match
+		cmp		dx, currentLength
+		je		check_diagonally_left_right_down_found
+		jmp		check_diagonally_left_right_loop_down
 
 	check_diagonally_left_right_down_found:
-		call mark_found_word
+		call	mark_found_word
 		ret
 
 	check_diagonally_left_right_not_found:
-		jmp check_diagonally_left_right_loop_main
+		jmp		check_diagonally_left_right_loop_main
 check_diagonally_left_right	endp
 ;########################################################################
 
@@ -600,7 +600,7 @@ check_diagonally_right_left	PROC
 	check_diagonally_right_left_up_character_selected:
 		mov		bx, dx
 		inc		bx
-		mov     cl, [si + bx]
+		mov		cl, [si + bx]
 
 		; al comes from call to read_char_from_screen, cl comes from predefined string with winning words
 		; if both are the same we will continue to check, if not we will jump to checking in opposite direction
@@ -613,12 +613,12 @@ check_diagonally_right_left	PROC
 
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
-		cmp     dx, currentLength
-		je     check_diagonally_right_left_up_found
-		jmp check_diagonally_right_left_loop_up
+		cmp		dx, currentLength
+		je		check_diagonally_right_left_up_found
+		jmp		check_diagonally_right_left_loop_up
 
 	check_diagonally_right_left_up_found:
-		call mark_found_word
+		call	mark_found_word
 		ret
 
 
@@ -663,18 +663,18 @@ check_diagonally_right_left	PROC
 		add		pointerX, 2h
 		inc		dx
 
-		;compare 'counter' (dx) with word length
-		;if they are equal we (user) have found a match
-		cmp     dx, currentLength
-		je     check_diagonally_right_left_down_found
-		jmp check_diagonally_right_left_loop_down
+		; compare 'counter' (dx) with word length
+		; if they are equal we (user) have found a match
+		cmp		dx, currentLength
+		je		check_diagonally_right_left_down_found
+		jmp		check_diagonally_right_left_loop_down
 
 	check_diagonally_right_left_down_found:
-		call mark_found_word
+		call	mark_found_word
 		ret
 
 	check_diagonally_right_left_not_found:
-		jmp check_diagonally_right_left_loop_main
+		jmp		check_diagonally_right_left_loop_main
 check_diagonally_right_left	endp
 ;########################################################################
 
@@ -826,40 +826,40 @@ process_input	endp
 
 
 ;########################################################################
-;print file on screen and read words to array
+; print file on screen and read words to array
 process_file	proc
 		; open file
-        mov     ah, 3dh
-        mov     al, 0
-        lea     dx, file
-        int     21h
-        jc      process_file_error_opening
-        mov     file_handle,ax
-        jmp     process_file_read_loop
+		mov		ah, 3dh
+		mov		al, 0
+		lea		dx, file
+		int		21h
+		jc		process_file_error_opening
+		mov		file_handle,ax
+		jmp		process_file_read_loop
 
 	process_file_error_opening:
-        mov     ah,	09h
-        lea     dx,	error_opening_file_message
-        int     21h
-        ret
+		mov		ah,	09h
+		lea		dx,	error_opening_file_message
+		int		21h
+		ret
 
 	process_file_read_loop:
-        mov     ah, 3fh
-        mov     bx, file_handle		; bx -> handle
-        mov     cx, 1				; cx -> number of bytes to read
-        lea     dx, read_character	; DS:DX -> buffer for data
-        int     21h 				; 21,3f -> read from file
+		mov		ah, 3fh
+		mov		bx, file_handle		; bx -> handle
+		mov		cx, 1				; cx -> number of bytes to read
+		lea		dx, read_character	; DS:DX -> buffer for data
+		int		21h 				; 21,3f -> read from file
 		jc		process_file_error_reading 			; jump if carry flag
 		cmp		ax, 0				; EOF?
 		jne		process_file_not_finished
 		jmp		process_file_close_file
 	process_file_not_finished:
-        mov     ah, 02h
+		mov		ah, 02h
 		mov		dl, read_character
 		int		21h 				;21,02 -> write character to standard output
 
-		;in the file first 25 lines are out 'gui', the rest are words to find, we need to separate those.
-		;count lines and after 25 jump to read_words, where those words to find will be read from file.
+		; in the file first 25 lines are out 'gui', the rest are words to find, we need to separate those.
+		; count lines and after 25 jump to read_words, where those words to find will be read from file.
 		cmp		read_character, 0Dh
 		jne		process_file_omit_line_increment ; if not a new line we jump
 		inc		read_lines 			; if new line increment
@@ -869,45 +869,45 @@ process_file	proc
 		jmp		process_file_read_loop
 
 	process_file_error_reading:
-        mov     ah, 09h
-        lea     dx, error_reading_file_message
-        int     21h
+		mov		ah, 09h
+		lea		dx, error_reading_file_message
+		int		21h
 
 
 	process_file_read_words:
 		mov 	di, offset wordsToFind
 	process_file_read_words_loop:
-		mov     ah, 3fh
-        mov     bx, file_handle
-        mov     cx, 1
-        lea     dx, read_character
-        int     21h 				; read character from file
+		mov		ah, 3fh
+		mov		bx, file_handle
+		mov		cx, 1
+		lea		dx, read_character
+		int		21h 				; read character from file
 		jc		process_file_error_reading
 		cmp		ax, 0				; EOF?
 		je		process_file_close_file
-        mov     ah, 02h
+		mov		ah, 02h
 		mov		dl, [read_character] ; move freshly read character to wordsToFind array
 		mov		[di], dl
 		inc		di
 		jmp		process_file_read_words_loop
 
 process_file_close_file:
-		mov     ah, 3eh
-        mov     bx, file_handle
-        int     21h
-        ret
+		mov		ah, 3eh
+		mov		bx, file_handle
+		int		21h
+		ret
 
-        mov     ah, 09h
-        lea     dx, error_closing_file_message
-        int     21h
+		mov		ah, 09h
+		lea		dx, error_closing_file_message
+		int		21h
 process_file	endp
 
 
 ;########################################################################
 Main    Proc
 
-        mov     ax,dseg
-        mov     ds,ax
+		mov		ax,dseg
+		mov		ds,ax
 		mov		ax,0B800h
 		mov		es,ax
 
@@ -916,9 +916,9 @@ Main    Proc
 		call	process_file
 		call	process_input
 		goto_xy	0,22
-        mov     ah,4ch
-        int     21h
-Main    endp
+		mov		ah,4ch
+		int		21h
+Main	endp
 cseg	ends
-end     Main
+end		Main
 

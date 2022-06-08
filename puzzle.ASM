@@ -12,8 +12,8 @@ dseg	segment para public 'data'
 		read_lines						db		0	; amount of already read lines from file
 
 		Car								db		32	; save a screen character
-		Cor								db		5	; store character color attribute 0101
-		constCor						db		5	;
+		Cor								db		7	; store character color attribute 0101
+		constCor						db		0	;
 		POSy							db		1	; POSY [1 .. 25]
 		POSx							db		2	; POSx [1..80]
 
@@ -24,7 +24,7 @@ dseg	segment para public 'data'
 		chuj							db		10h
 
 		stringus 						db		' '
- 		HELLO_LEN 						db		5
+ 		temp	 						db		?
 
 		wordsToFind 					dw		12*15 dup(0) ; so we asumme there must be at most 12 words to find, with at most 15 characters each
 		currentOffset					dw		0
@@ -32,6 +32,19 @@ dseg	segment para public 'data'
 		tempp							dw		0
 
 		wordNumber						db		0
+		ultimo_num_aleat 				dw 		0
+
+
+		read_words_posx					db		0
+		read_words_posy					db		0
+		read_words_word_board_posx		db		0
+		read_words_word_board_posy		db		0
+		read_words_direction			db		0
+		read_words_word					dw		1*15 dup(0) ; so we asumme there must be at most 12 words to find, with at most 15 characters each
+		read_words_word_length			db		0
+		read_words_word_length_temp		db		1
+		read_words_param_counter		db		0
+		read_words_words_counter		db		0
 dseg	ends
 
 
@@ -42,6 +55,9 @@ cseg   	segment para public 'code'
 ;########################################################################
 ; Put cursor to X Y coordinates
 goto_xy	macro	POSx,POSy
+		push 	ax
+		push 	bx
+		push 	cx
 		push 	dx
 
 		mov		ah,02h
@@ -51,6 +67,9 @@ goto_xy	macro	POSx,POSy
 		int		10h
 
 		pop		dx
+		pop		cx
+		pop		bx
+		pop		ax
 endm
 
 ;########################################################################
@@ -858,7 +877,7 @@ process_file	proc
 		mov		dl, read_character
 		int		21h 				;21,02 -> write character to standard output
 
-		; in the file first 25 lines are out 'gui', the rest are words to find, we need to separate those.
+		; in the file first 25 lines are our 'gui', the rest are words to find, we need to separate those.
 		; count lines and after 25 jump to read_words, where those words to find will be read from file.
 		cmp		read_character, 0Dh
 		jne		process_file_omit_line_increment ; if not a new line we jump
@@ -876,7 +895,29 @@ process_file	proc
 
 	process_file_read_words:
 		mov 	di, offset wordsToFind
+		add		di, 1
+
+	process_file_read_words_loop_pre:
+		; reset variables
+		mov		read_words_posx, 0
+		mov		read_words_posy, 0
+		mov		read_words_direction, 0
+		mov		read_words_word, 0
+		mov		read_words_word_length, 0
+		mov		read_words_word_length_temp, 1
+		mov		read_words_param_counter, 0
+		mov		read_words_word_board_posx, 29
+		add		read_words_word_board_posy, 1
+
 	process_file_read_words_loop:
+		; we can have at most 12 words
+		cmp		read_words_words_counter, 11
+		jne		process_file_read_words_loop_not_finished
+		ret
+
+	process_file_read_words_loop_not_finished:
+		push	bx
+
 		mov		ah, 3fh
 		mov		bx, file_handle
 		mov		cx, 1
@@ -885,10 +926,206 @@ process_file	proc
 		jc		process_file_error_reading
 		cmp		ax, 0				; EOF?
 		je		process_file_close_file
+
+		pop		bx
+
+		mov		dl, [read_character]
+		cmp		dl, 2Ch 			; if read character is a comma (,) increment read_words_param_counter
+		je		process_file_read_words_loop_increment_param_counter
+		jmp		process_file_read_words_loop_skip_incrementing_param_counter
+
+		; increment param counter and perfom actions tied to each situation
+	process_file_read_words_loop_increment_param_counter:
+		add		read_words_param_counter, 1
+		mov		read_words_word_length_temp, 1
+
+		; set bx as a pointer to appropriate variable (i dont know what i am doing tbh)
+		cmp		read_words_param_counter, 1
+		jne		process_file_read_words_loop_skip_setting_pointer_to_posx
+		mov		bx, offset read_words_posx
+		jmp		process_file_read_words_loop
+
+	process_file_read_words_loop_skip_setting_pointer_to_posx:
+		cmp		read_words_param_counter, 2
+		jne		process_file_read_words_loop_skip_setting_pointer_to_posy
+		mov		bx, offset read_words_posy
+		jmp		process_file_read_words_loop
+
+	process_file_read_words_loop_skip_setting_pointer_to_posy:
+		cmp		read_words_param_counter, 3
+		jne		process_file_read_words_loop_skip_setting_pointer_to_direction
+		mov		bx, offset read_words_direction
+		jmp		process_file_read_words_loop
+	
+	process_file_read_words_loop_skip_setting_pointer_to_direction:
+		cmp		read_words_param_counter, 4
+		jne		process_file_read_words_loop_finish_one_word_pre
+		mov		bx, offset read_words_word
+		jmp		process_file_read_words_loop
+
+	process_file_read_words_loop_finish_one_word_pre:
+		xor 	ax, ax
+		mov		bx, offset read_words_word
+
+	process_file_read_words_loop_finish_one_word:
+		; put word into table and write it on the screen.
+
+
+		push 	ax
+		push 	bx
+		goto_xy read_words_posx, read_words_posy
+
+		; increment posx and posy according to the direction
+		cmp		read_words_direction, 0
+		jne		process_file_read_words_loop_finish_one_word_read_words_check_direction_1
+		; left to right
+		add		read_words_posx, 2
+		jmp		process_file_read_words_loop_finish_one_word_read_words_start_work
+
+	process_file_read_words_loop_finish_one_word_read_words_check_direction_1::
+		cmp		read_words_direction, 1
+		jne		process_file_read_words_loop_finish_one_word_read_words_check_direction_2
+		; left to right and up to down
+		add		read_words_posx, 2
+		add		read_words_posy, 1
+		jmp		process_file_read_words_loop_finish_one_word_read_words_start_work
+
+	process_file_read_words_loop_finish_one_word_read_words_check_direction_2:
+		cmp		read_words_direction, 2
+		jne		process_file_read_words_loop_finish_one_word_read_words_check_direction_3
+		; up to down
+		add		read_words_posy, 1
+		jmp		process_file_read_words_loop_finish_one_word_read_words_start_work
+
+	process_file_read_words_loop_finish_one_word_read_words_check_direction_3:
+		cmp		read_words_direction, 3
+		jne		process_file_read_words_loop_finish_one_word_read_words_check_direction_4
+		; up to down right to left
+		add		read_words_posy, 1
+		sub		read_words_posx, 2
+		jmp		process_file_read_words_loop_finish_one_word_read_words_start_work
+
+	process_file_read_words_loop_finish_one_word_read_words_check_direction_4:
+		cmp		read_words_direction, 4
+		jne		process_file_read_words_loop_finish_one_word_read_words_check_direction_5
+		; right to left
+		sub		read_words_posx, 2
+		jmp		process_file_read_words_loop_finish_one_word_read_words_start_work
+
+	process_file_read_words_loop_finish_one_word_read_words_check_direction_5:
+		cmp		read_words_direction, 5
+		jne		process_file_read_words_loop_finish_one_word_read_words_check_direction_6
+		; right to left down to up
+		sub		read_words_posx, 2
+		sub		read_words_posy, 1
+		jmp		process_file_read_words_loop_finish_one_word_read_words_start_work
+
+	process_file_read_words_loop_finish_one_word_read_words_check_direction_6:
+		cmp		read_words_direction, 6
+		jne		process_file_read_words_loop_finish_one_word_read_words_check_direction_7
+		; down to up
+		sub		read_words_posy, 1
+		jmp		process_file_read_words_loop_finish_one_word_read_words_start_work
+
+	process_file_read_words_loop_finish_one_word_read_words_check_direction_7:
+		; down to up left to right
+		sub		read_words_posy, 1
+		add		read_words_posx, 2
+		jmp		process_file_read_words_loop_finish_one_word_read_words_start_work
+
+	process_file_read_words_loop_finish_one_word_read_words_start_work:
+		pop		bx
+
+		; now lets write the word on to screen
 		mov		ah, 02h
-		mov		dl, [read_character] ; move freshly read character to wordsToFind array
+		mov		dl, [bx]
+		int		21h 				;21,02 -> write character to standard output
+
+		; and write to array of words to find for later use
+		mov		dl, [bx]
 		mov		[di], dl
+
+		; aaaaand write the word on list of words to find on screen
+		goto_xy read_words_word_board_posx, read_words_word_board_posy
+		mov		ah, 02h
+		int		21h
+
+		inc		read_words_word_board_posx
+		pop		ax
+
+		add		al, 1h
+		add		bx, 1h
+		add		di, 1h
+
+		cmp		al, read_words_word_length 	; if we finished that one word jump to the process_file_read_words_loop_finish_one_word_finished
+		jge		process_file_read_words_loop_finish_one_word_finished
+
+		jmp 	process_file_read_words_loop_finish_one_word
+
+	process_file_read_words_loop_finish_one_word_finished:
+		; finished parsing one whole word, wow :)
+
+		inc		read_words_words_counter
+
+		push 	ax
+
+		; we need to add two characters to the words to find array, to make it compatible with the rest of the code.
+		mov		al, 0Dh
+		mov		[di], al
 		inc		di
+		mov		al, 0Ah
+		mov		[di], al
+		inc		di
+
+		pop		ax
+
+		jmp		process_file_read_words_loop_pre
+
+
+	process_file_read_words_loop_skip_incrementing_param_counter:
+		; if we are here it means we need to parse character that we read from file.
+		; that will be either character, or character representing some number.
+
+		; if read_words_param_counter is 4 we know we need to read character.
+		cmp		read_words_param_counter, 4
+		jne		process_file_read_words_loop_read_number
+
+		mov		[bx], dl
+		inc		bx
+		inc		read_words_word_length
+		jmp		process_file_read_words_loop
+
+	process_file_read_words_loop_read_number:
+		; if read_words_param_counter is anything different than 4 we assume we need to read number.
+		push 	ax
+		push	dx
+
+		sub		dl, 30h		; ASCII representations of characters 0-9 starts at 30h
+
+		; we use read_words_word_length_temp as a current weight of the digit in number we are reading.
+		cmp		read_words_word_length_temp, 10
+		je		process_file_read_words_loop_read_number_multiply
+
+		; just read character, put in the variable
+		add		read_words_word_length_temp, 9
+		mov		[bx], dl
+		pop		dx
+		pop		ax
+
+		jmp		process_file_read_words_loop
+
+	process_file_read_words_loop_read_number_multiply:
+		; we will get here only if some number has 2 digits.
+		; we take firt digit and multiply it by read_words_word_length_temp, which happens to be 10.
+		mov		al, [bx]
+		mul		read_words_word_length_temp
+
+		mov		[bx], ax
+		add		[bx], dl 	; add the number that we just read to the product
+
+		pop		dx
+		pop		ax
+
 		jmp		process_file_read_words_loop
 
 process_file_close_file:
@@ -903,6 +1140,78 @@ process_file_close_file:
 process_file	endp
 
 
+
+;########################################################################
+; Calculate 16-bit random number
+get_random proc near
+	sub		sp, 2
+	push	bp
+	mov		bp, sp
+	push	ax
+	push	cx
+	push	dx
+	mov		ax, [bp+4]
+	mov		[bp+2], ax
+
+	mov		ah,00h
+	int		1ah
+
+	add		dx, ultimo_num_aleat
+	add		cx, dx
+	mov		ax, 65521
+	push	dx
+	mul		cx
+	pop		dx
+	xchg	dl, dh
+	add		dx, 32749
+	add		dx, ax
+
+	mov		ultimo_num_aleat,dx
+	mov		[BP+4], dx
+
+	pop		dx
+	pop		cx
+	pop		ax
+	pop		bp
+	ret
+get_random endp
+
+fill_board_with_random_chars PROC
+		mov cx, 132 		; 132 passes of the main loop are needed to fill current sized board.
+
+	fill_board_with_random_chars_main_loop:
+		call	get_random
+		pop		ax 			; get the random number
+
+		mov 	bx, 26
+		xor 	dx, dx
+		div		bx			; divide the random number by 26, the remainder will be equal to randomNumber%26
+		add		dx, 65		; add 65 to the remainder, since 65 is 'A' in ASCII, that way we have now random character from A to Z in dx.
+
+		goto_xy POSx, POSy
+		mov		ah, 08h
+		mov		bh, 0
+		int		10h
+		cmp		al, 20h		; read character at cursor position, if it is not empty we need to skip writing random char
+		jne		fill_board_with_random_chars_skip_write_char
+
+		mov		ah, 02h
+		int		21h			; write the random character at place
+
+	fill_board_with_random_chars_skip_write_char:
+		add 	POSx, 2		; move to the right
+		cmp		POSx, 26
+		jne		fill_board_with_random_chars_skip_posy_increment
+
+		mov		POSx, 2		; if at the end of board go row below.
+		inc		POSy
+
+	fill_board_with_random_chars_skip_posy_increment:
+		loop	fill_board_with_random_chars_main_loop
+		ret
+fill_board_with_random_chars ENDP
+
+
 ;########################################################################
 Main    Proc
 
@@ -911,9 +1220,18 @@ Main    Proc
 		mov		ax,0B800h
 		mov		es,ax
 
+		mov		bl, cor
+		not		bl
+		mov		constCor, bl
+
 		call 	clear_screen
-		goto_xy	0,0
 		call	process_file
+		goto_xy	0,0
+		; call	fill_board_with_random_chars
+
+		mov 	POSy, 1
+		mov		POSx, 2
+
 		call	process_input
 		goto_xy	0,22
 		mov		ah,4ch

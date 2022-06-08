@@ -197,7 +197,7 @@ check_horizontally	PROC
 	check_horizontally_loop_pointer_left:
 		sub		pointerX, 2h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_horizontally_loop_pointer_left
 
 		; go back one, since we went one too far
@@ -208,7 +208,7 @@ check_horizontally	PROC
 	check_horizontally_loop_left:
 		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_horizontally_left_character_selected
 		jmp		check_horizontally_next_direction
 
@@ -248,7 +248,7 @@ check_horizontally	PROC
 	check_horizontally_loop_pointer_right:
 		add		pointerX, 2h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_horizontally_loop_pointer_right
 
 		; go back one, since we went one too far
@@ -259,7 +259,7 @@ check_horizontally	PROC
 	check_horizontally_loop_right:
 		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_horizontally_right_character_selected
 		jmp		check_horizontally_not_found
 
@@ -323,7 +323,7 @@ check_vertically	PROC
 	check_vertically_loop_pointer_up:
 		dec		pointerY
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_vertically_loop_pointer_up
 
 		; go back one, since we went one too far
@@ -334,7 +334,7 @@ check_vertically	PROC
 	check_vertically_loop_up:
 		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_vertically_up_character_selected
 		jmp		check_vertically_next_direction
 
@@ -374,7 +374,7 @@ check_vertically	PROC
 	check_vertically_loop_pointer_down:
 		inc		pointerY
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_vertically_loop_pointer_down
 
 		; go back one, since we went one too far
@@ -385,7 +385,7 @@ check_vertically	PROC
 	check_vertically_loop_down:
 		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_vertically_down_character_selected
 		jmp		check_vertically_not_found
 
@@ -449,7 +449,7 @@ check_diagonally_left_right	PROC
 		dec		pointerY
 		sub		pointerX, 2h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_diagonally_left_right_loop_pointer_up
 
 		; go back one, since we went one too far
@@ -461,7 +461,7 @@ check_diagonally_left_right	PROC
 	check_diagonally_left_right_loop_up:
 		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_diagonally_left_right_up_character_selected
 		jmp		check_diagonally_left_right_next_direction
 
@@ -503,7 +503,7 @@ check_diagonally_left_right	PROC
 		inc		pointerY
 		add		pointerX, 2h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_diagonally_left_right_loop_pointer_down
 
 		; go back one, since we went one too far
@@ -515,7 +515,7 @@ check_diagonally_left_right	PROC
 	check_diagonally_left_right_loop_down:
 		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_diagonally_left_right_down_character_selected
 		jmp		check_diagonally_left_right_not_found
 
@@ -581,7 +581,7 @@ check_diagonally_right_left	PROC
 		dec		pointerY
 		add		pointerX, 2h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_diagonally_right_left_loop_pointer_up
 
 		; go back one, since we went one too far
@@ -593,7 +593,7 @@ check_diagonally_right_left	PROC
 	check_diagonally_right_left_loop_up:
 		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_diagonally_right_left_up_character_selected
 		jmp		check_diagonally_right_left_next_direction
 
@@ -635,7 +635,7 @@ check_diagonally_right_left	PROC
 		inc		pointerY
 		sub		pointerX, 2h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_diagonally_right_left_loop_pointer_down
 
 		; go back one, since we went one too far
@@ -647,7 +647,7 @@ check_diagonally_right_left	PROC
 	check_diagonally_right_left_loop_down:
 		; make sure that char at pointerX pointerY is selected
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		je		check_diagonally_right_left_down_character_selected
 		jmp		check_diagonally_right_left_not_found
 
@@ -763,21 +763,21 @@ process_input	PROC
 		sub		pointerX, 2h			; move cursor to the A position
 		sub		pointerY, 1h
 		call	read_char_from_screen	; read whats on the screen and check its attribute
-		cmp		ah, cor
+		cmp		ah, constCor
 		jne		process_input_check_b 	; if character at A is not selected we jump to check B
 		call	check_diagonally_left_right
 
 	process_input_check_b:
 		add		pointerX, 2h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		jne		process_input_check_c
 		call	check_vertically
 
 	process_input_check_c:
 		add		pointerX, 2h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		jne		process_input_check_d
 		call 	check_diagonally_right_left
 
@@ -785,14 +785,14 @@ process_input	PROC
 		sub		pointerX, 4h
 		add		pointerY, 1h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		jne		process_input_check_e
 		call	check_horizontally
 
 	process_input_check_e:
 		add		pointerX, 4h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		jne		process_input_check_f
 		call 	check_horizontally
 
@@ -800,21 +800,21 @@ process_input	PROC
 		sub		pointerX, 4h
 		add		pointerY, 1h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		jne		process_input_check_g
 		call	check_diagonally_right_left
 
 	process_input_check_g:
 		add		pointerX, 2h
 		call	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		jne		process_input_check_h
 		call	check_vertically
 
 	process_input_check_h:
 		add		pointerX, 2h
 		call 	read_char_from_screen
-		cmp		ah, cor
+		cmp		ah, constCor
 		jne		jmp_process_input_loop
 		call	check_diagonally_left_right
 

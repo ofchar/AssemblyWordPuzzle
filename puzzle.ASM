@@ -409,10 +409,18 @@ check_horizontally	PROC
 		; al comes from call to read_char_from_screen, cl comes from predefined string with winning words
 		; if both are the same we will continue to check, if not we will jump to checking in opposite direction
 		cmp		al, cl
-		jne		check_horizontally_next_direction
+		jne		check_horizontally_left_not_equal
+		jmp		check_horizontally_left_equal
 
+	check_horizontally_left_not_equal:
 		add		pointerX, 2h
-		inc 	dx
+		jmp		check_horizontally_left_continue
+
+	check_horizontally_left_equal:
+		add		pointerX, 2h
+		inc		dx
+
+	check_horizontally_left_continue:
 
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
@@ -458,11 +466,18 @@ check_horizontally	PROC
 		mov		cl, [si + bx]
 
 		cmp		al, cl
-		jne		check_horizontally_not_found
+		jne		check_horizontally_right_not_equal
+		jmp		check_horizontally_right_equal
 
+	check_horizontally_right_not_equal:
+		sub		pointerX, 2h
+		jmp		check_horizontally_right_continue
+
+	check_horizontally_right_equal:
 		sub		pointerX, 2h
 		inc		dx
 
+	check_horizontally_right_continue:
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
 		cmp		dx, currentLength
@@ -535,11 +550,18 @@ check_vertically	PROC
 		; al comes from call to read_char_from_screen, cl comes from predefined string with winning words
 		; if both are the same we will continue to check, if not we will jump to checking in opposite direction
 		cmp		al, cl
-		jne		check_vertically_next_direction
+		jne		check_vertically_up_not_equal
+		jmp		check_vertically_up_equal
 
+	check_vertically_up_not_equal:
 		inc 	pointerY
-		inc 	dx
+		jmp		check_vertically_up_continue
 
+	check_vertically_up_equal:
+		inc 	pointerY
+		inc		dx
+
+	check_vertically_up_continue:
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
 		cmp		dx, currentLength
@@ -584,10 +606,18 @@ check_vertically	PROC
 		mov     cl, [si + bx]
 
 		cmp		al, cl
-		jne		check_vertically_not_found
+		jne		check_vertically_down_not_equal
+		jmp		check_vertically_down_equal
 
-		dec		pointerY
+	check_vertically_down_not_equal:
+		dec 	pointerY
+		jmp		check_vertically_down_continue
+
+	check_vertically_down_equal:
+		dec 	pointerY
 		inc		dx
+
+	check_vertically_down_continue:
 
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
@@ -662,12 +692,20 @@ check_diagonally_left_right	PROC
 		; al comes from call to read_char_from_screen, cl comes from predefined string with winning words
 		; if both are the same we will continue to check, if not we will jump to checking in opposite direction
 		cmp		al, cl
-		jne		check_diagonally_left_right_next_direction
+		jne		check_diagonally_left_right_up_not_equal
+		jmp		check_diagonally_left_right_up_equal
 
+	check_diagonally_left_right_up_not_equal:
 		inc 	pointerY
 		add		pointerX, 2h
-		inc 	dx
+		jmp		check_diagonally_left_right_up_continue
 
+	check_diagonally_left_right_up_equal:
+		inc 	pointerY
+		add		pointerX, 2h
+		inc		dx
+
+	check_diagonally_left_right_up_continue:
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
 		cmp		dx, currentLength
@@ -714,12 +752,20 @@ check_diagonally_left_right	PROC
 		mov     cl, [si + bx]
 
 		cmp		al, cl
-		jne		check_diagonally_left_right_not_found
+		jne		check_diagonally_left_right_down_not_equal
+		jmp		check_diagonally_left_right_down_equal
 
+	check_diagonally_left_right_down_not_equal:
+		dec		pointerY
+		sub		pointerX, 2h
+		jmp		check_diagonally_left_right_down_continue
+
+	check_diagonally_left_right_down_equal:
 		dec		pointerY
 		sub		pointerX, 2h
 		inc		dx
 
+	check_diagonally_left_right_down_continue:
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
 		cmp		dx, currentLength
@@ -794,12 +840,20 @@ check_diagonally_right_left	PROC
 		; al comes from call to read_char_from_screen, cl comes from predefined string with winning words
 		; if both are the same we will continue to check, if not we will jump to checking in opposite direction
 		cmp		al, cl
-		jne		check_diagonally_right_left_next_direction
+		jne		check_diagonally_right_left_up_not_equal
+		jmp		check_diagonally_right_left_up_equal
 
+	check_diagonally_right_left_up_not_equal:
 		inc 	pointerY
 		sub		pointerX, 2h
-		inc 	dx
+		jmp		check_diagonally_right_left_up_continue
 
+	check_diagonally_right_left_up_equal:
+		inc 	pointerY
+		sub		pointerX, 2h
+		inc		dx
+
+	check_diagonally_right_left_up_continue:
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
 		cmp		dx, currentLength
@@ -846,12 +900,20 @@ check_diagonally_right_left	PROC
 		mov     cl, [si + bx]
 
 		cmp		al, cl
-		jne		check_diagonally_right_left_not_found
+		jne		check_diagonally_right_left_down_not_equal
+		jmp		check_diagonally_right_left_down_equal
 
+	check_diagonally_right_left_down_not_equal:
+		dec		pointerY
+		add		pointerX, 2h
+		jmp		check_diagonally_right_left_down_continue
+
+	check_diagonally_right_left_down_equal:
 		dec		pointerY
 		add		pointerX, 2h
 		inc		dx
 
+	check_diagonally_right_left_down_continue:
 		; compare 'counter' (dx) with word length
 		; if they are equal we (user) have found a match
 		cmp		dx, currentLength

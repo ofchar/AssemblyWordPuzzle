@@ -45,6 +45,12 @@ dseg	segment para public 'data'
 		read_words_word_length_temp		db		1
 		read_words_param_counter		db		0
 		read_words_words_counter		db		0
+
+		points							dw		0
+		invalid_counter					dw		0
+		found							db		0
+		all_with_word 					db		12*12 dup(0)
+		str_num 						db 		5 dup(?),'$'
 dseg	ends
 
 
@@ -129,7 +135,7 @@ mark_found_word	PROC
 		mov		pointerX, 1Dh
 		mov 	pointerY, al
 	mark_found_word_loop:
-		call read_char_from_screen
+		call 	read_char_from_screen
 
 		mov		bl, 2h
 		mov 	ah, 09h
@@ -137,9 +143,23 @@ mark_found_word	PROC
 		mov		cx, 1
 		int		10h
 
-		inc pointerX
-		cmp pointerX,27h
-		jne mark_found_word_loop
+		inc 	pointerX
+		cmp 	pointerX, 27h
+		jne 	mark_found_word_loop
+
+
+		mov		ax, currentLength
+		add		points, ax
+
+		mov		ax, points
+		mov		cx, 13
+		mov		dh, 29
+		call	write_number_to_screen
+
+		mov		ax, invalid_counter
+		mov		cx, 15
+		mov		dh, 29
+		call	write_number_to_screen
 		ret
 mark_found_word	endp
 ;########################################################################
@@ -773,6 +793,57 @@ process_input	PROC
 		mov		al, POSy
 		mov		pointerY, al
 
+		push	ax
+		push	bx
+		push	cx
+		push 	dx
+
+		xor 	bx, bx
+		mov		bx, offset all_with_word
+		xor 	cx, cx
+		xor 	ax, ax
+		mov		cl, pointerX
+		add		ax, cx
+		xor 	cx, cx
+		mov		cl, 2
+		div		cl
+		xor		cx, cx
+		add 	cl, al
+		add		bx, ax
+		sub		bx, 1
+
+		xor 	cx, cx
+		xor 	ax, ax
+		mov 	al, pointerY
+		add		cx, ax
+		sub		cx, 1
+
+	process_input_select_character_add_y_to_all_with_word_pointer:
+		add		bx, 12
+		loop 	process_input_select_character_add_y_to_all_with_word_pointer
+
+		mov		al, [bx]
+		cmp		al, 80
+		je		process_input_select_character_cont
+
+		call	read_char_from_screen
+		cmp		ah, constCor
+		jne		process_input_unincrement_invalid
+		add		invalid_counter, 1
+		; add		presses_since_last, 1
+		jmp		process_input_select_character_cont
+
+		process_input_unincrement_invalid:
+		sub		invalid_counter, 1
+		; sub		presses_since_last, 1
+
+	process_input_select_character_cont:
+		pop	 	dx
+		pop		cx
+		pop		bx
+		pop		ax
+
+
 		; start by checking if anything is marked in the square around currently selected letter
 		; A B C
 		; D   E
@@ -972,8 +1043,15 @@ process_file	proc
 
 
 		push 	ax
+		push	cx
 		push 	bx
 		goto_xy read_words_posx, read_words_posy
+
+		xor 	ax, ax
+		mov		al, read_words_posx
+		mov		savedPointerX, al
+		mov		al, read_words_posy
+		mov		savedPointerY, al
 
 		; increment posx and posy according to the direction
 		cmp		read_words_direction, 0
@@ -1050,7 +1128,44 @@ process_file	proc
 		mov		ah, 02h
 		int		21h
 
+		push 	bx
+
+		; aaaaaaaaaaaaaand mark that at that place there is a world to be found
+		; all_with_word
+		xor 	bx, bx
+		mov		bx, offset all_with_word
+
+		xor 	cx, cx
+		xor 	ax, ax
+		mov		cl, savedPointerX
+		add		ax, cx
+		xor 	cx, cx
+		mov		cl, 2
+		div		cl
+		xor		cx, cx
+		add 	cl, al
+		add		bx, cx
+		sub		bx, 1
+
+		xor 	cx, cx
+		xor 	ax, ax
+		mov 	al, savedPointerY
+		add		cx, ax
+		sub		cx, 1
+
+	process_file_read_words_loop_finish_one_word_read_words_mark_place_loop:
+		add		bx, 12
+		loop 	process_file_read_words_loop_finish_one_word_read_words_mark_place_loop
+
+		xor		cx, cx
+		mov 	cl, 80
+		mov		[bx], cl
+
+
+		pop 	bx
+
 		inc		read_words_word_board_posx
+		pop		cx
 		pop		ax
 
 		add		al, 1h

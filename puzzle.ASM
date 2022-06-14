@@ -37,6 +37,7 @@ dseg	segment para public 'data'
 
 		read_words_posx					db		0
 		read_words_posy					db		0
+		adsadsadasdatemp				db		1
 		read_words_word_board_posx		db		0
 		read_words_word_board_posy		db		0
 		read_words_direction			db		0
@@ -51,6 +52,14 @@ dseg	segment para public 'data'
 		found							db		0
 		all_with_word 					db		12*12 dup(0)
 		str_num 						db 		5 dup(?),'$'
+
+		congrats_message				db		'YOU DID IT!$'
+		points_message					db		'Your points$'
+		invalid_message					db		'Your fails$'
+		time_message					db		'Your time$'
+
+		timer_startminutes				db		0
+		timer_startseconds				db		0
 dseg	ends
 
 
@@ -128,8 +137,136 @@ read_char_from_screen	endp
 
 
 ;########################################################################
+impnum proc near
+		push	bp
+		mov		bp, sp
+		push	ax
+		push	bx
+		push	cx
+		push	dx
+		push	di
+		mov		ax, [bp+4] ;param3
+		lea		di, [str_num+5]
+		mov		cx, 5
+	prox_dig:
+		xor		dx, dx
+		mov		bx, 10
+		div		bx
+		add		dl, '0' ; dh e' sempre 0
+		dec		di
+		mov		[di], dl
+		loop	prox_dig
+
+		mov		ah, 02h
+		mov		bh, 00h
+		mov		dl, [bp+7] ;param1
+		mov		dh, [bp+6] ;param2
+		int		10h
+		mov		dx, di
+		mov		ah, 09h
+		int		21h
+		pop		di
+		pop		dx
+		pop		cx
+		pop		bx
+		pop		ax
+		pop		bp
+		ret		4 ;limpa parametros (4 bytes) colocados na pilha
+impnum endp
+;########################################################################
+
+
+
+;########################################################################
+; print number in ax at y equal cx and x equal dh
+write_number_to_screen	PROC
+		push	bx
+
+		; mov		cx, 13
+		mov		dl, cl
+		; mov		dh, 1Dh
+		push	dx
+		mov 	bx, 200 ; max?
+		xor 	dx, dx
+		div		bx
+		push	dx
+		call	impnum
+
+		pop		bx
+		ret
+write_number_to_screen	endp
+;########################################################################
+
+
+;########################################################################
+; finish (me)
+finish_game PROC
+		call	clear_screen
+		call	clear_screen
+
+		goto_xy 10, 2
+		mov		ah, 09h
+		lea		dx, congrats_message
+		int		21h
+		mov		dx, 0
+		goto_xy 10, 4
+		lea		dx, points_message
+		int		21h
+		mov		dx, 0
+		goto_xy 10, 5
+		lea		dx, invalid_message
+		int		21h
+		mov		dx, 0
+		goto_xy 10, 7
+		lea		dx, time_message
+		int		21h
+		mov		dx, 0
+
+		mov		ax, points
+		mov		cx, 4
+		mov		dh, 26
+		call	write_number_to_screen
+
+		mov		ax, invalid_counter
+		mov		cx, 5
+		mov		dh, 26
+		call	write_number_to_screen
+
+
+		mov 	ah, 2ch
+		int		21h
+		xor		ax, ax
+		sub		cl, timer_startminutes
+		sub		dh, timer_startseconds
+		mov		al, cl
+		mov		cl, 60
+		mul		cl
+		xor		cx, cx
+		mov 	cl, dh
+		add		ax, cx
+
+
+		mov		cx, 7
+		mov		dh, 26
+		call	write_number_to_screen
+
+		mov al, 0
+		mov ah, 4ch
+		int 21h
+finish_game ENDP
+;########################################################################
+
+
+;########################################################################
 ; mark a word that has been just found
 mark_found_word	PROC
+		push	ax
+		push	bx
+		push	cx
+		push	dx
+
+		add 	found, 1
+
 		xor 	ax, ax
 		mov 	al, wordNumber
 		mov		pointerX, 1Dh
@@ -160,6 +297,19 @@ mark_found_word	PROC
 		mov		cx, 15
 		mov		dh, 29
 		call	write_number_to_screen
+
+
+		xor 	ax, ax
+		mov		al, found
+		cmp		al, read_words_words_counter
+		jne		mark_found_word_nothing
+		call	finish_game
+
+	mark_found_word_nothing:
+		pop		dx
+		pop		cx
+		pop		bx
+		pop		ax
 		ret
 mark_found_word	endp
 ;########################################################################
@@ -786,6 +936,7 @@ process_input	PROC
 		mov		cx, 1
 		int		10h
 
+
 		; check if user may have found some word.
 		; copy our posx and posy pointer because we dont want cursor to fly around
 		mov		al, POSx
@@ -1338,6 +1489,11 @@ Main    Proc
 		mov		bl, cor
 		not		bl
 		mov		constCor, bl
+
+		mov		ah, 2ch
+		int 	21h
+		mov 	timer_startminutes, cl
+		mov		timer_startseconds, dh
 
 		call 	clear_screen
 		call	process_file

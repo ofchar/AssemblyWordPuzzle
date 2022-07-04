@@ -21,15 +21,10 @@ dseg	segment para public 'data'
 		savedPointerX					db		0
 		pointerY						db		0
 		savedPointerY					db		0
-		chuj							db		10h
-
-		stringus 						db		' '
- 		temp	 						db		?
 
 		wordsToFind 					dw		12*15 dup(0) ; so we asumme there must be at most 12 words to find, with at most 15 characters each
 		currentOffset					dw		0
 		currentLength					dw		0
-		tempp							dw		0
 
 		wordNumber						db		0
 		ultimo_num_aleat 				dw 		0
@@ -41,7 +36,7 @@ dseg	segment para public 'data'
 		read_words_word_board_posx		db		0
 		read_words_word_board_posy		db		0
 		read_words_direction			db		0
-		read_words_word					dw		1*15 dup(0) ; so we asumme there must be at most 12 words to find, with at most 15 characters each
+		read_words_word					dw		1*15 dup(0)
 		read_words_word_length			db		0
 		read_words_word_length_temp		db		1
 		read_words_param_counter		db		0
@@ -75,10 +70,10 @@ goto_xy	macro	POSx,POSy
 		push 	cx
 		push 	dx
 
-		mov		ah,02h
-		mov		bh,0		; page number
-		mov		dl,POSx
-		mov		dh,POSy
+		mov		ah, 02h
+		mov		bh, 0		; page number
+		mov		dl, POSx
+		mov		dh, POSy
 		int		10h
 
 		pop		dx
@@ -91,11 +86,11 @@ endm
 ; Clear screen
 clear_screen	proc
 		xor		bx,bx
-		mov		cx,25*80
+		mov		cx, 25*80
 
 clear_screen_loop:
-		mov		byte ptr es:[bx],' '
-		mov		byte ptr es:[bx+1],7
+		mov		byte ptr es:[bx], ' '
+		mov		byte ptr es:[bx+1], 7
 		inc		bx
 		inc 	bx
 		loop	clear_screen_loop
@@ -106,14 +101,16 @@ clear_screen	endp
 ;########################################################################
 ; Read a key
 read_key	PROC
-		mov		ah,08h
-		int		21h
-		mov		ah,0
-		cmp		al,0
-		jne		read_key_return
 		mov		ah, 08h
 		int		21h
-		mov		ah,1
+		mov		ah, 0
+		cmp		al, 0
+		jne		read_key_return
+
+		mov		ah, 08h
+		int		21h
+		mov		ah, 1
+
 	read_key_return:
 		RET
 read_key	endp
@@ -145,22 +142,22 @@ impnum proc near
 		push	cx
 		push	dx
 		push	di
-		mov		ax, [bp+4] ;param3
+		mov		ax, [bp+4]	; param3
 		lea		di, [str_num+5]
 		mov		cx, 5
 	prox_dig:
 		xor		dx, dx
 		mov		bx, 10
 		div		bx
-		add		dl, '0' ; dh e' sempre 0
+		add		dl, '0'
 		dec		di
 		mov		[di], dl
 		loop	prox_dig
 
 		mov		ah, 02h
 		mov		bh, 00h
-		mov		dl, [bp+7] ;param1
-		mov		dh, [bp+6] ;param2
+		mov		dl, [bp+7]	; param1
+		mov		dh, [bp+6]	; param2
 		int		10h
 		mov		dx, di
 		mov		ah, 09h
@@ -171,7 +168,7 @@ impnum proc near
 		pop		bx
 		pop		ax
 		pop		bp
-		ret		4 ;limpa parametros (4 bytes) colocados na pilha
+		ret		4
 impnum endp
 ;########################################################################
 
@@ -182,11 +179,9 @@ impnum endp
 write_number_to_screen	PROC
 		push	bx
 
-		; mov		cx, 13
 		mov		dl, cl
-		; mov		dh, 1Dh
 		push	dx
-		mov 	bx, 200 ; max?
+		mov 	bx, 200
 		xor 	dx, dx
 		div		bx
 		push	dx
@@ -937,7 +932,7 @@ process_input	PROC
 	process_input_loop:
 		goto_xy	POSx,POSy	; Go to new position
 		mov 	ah, 08h
-		mov		bh,0		; page number
+		mov		bh, 0		; page number
 		int		10h
 		mov		Car, al		; save character at cursor position
 		mov		Cor, ah		; save color at cursor position
@@ -967,19 +962,19 @@ process_input	PROC
 		jmp		process_input_loop
 
 	process_input_down:
-		cmp		al,50h		; arrow down key
+		cmp		al, 50h		; arrow down key
 		jne		process_input_left
 		inc 	POSy
 		jmp		process_input_loop
 
 	process_input_left:
-		cmp		al,4Bh		; arrow left key
+		cmp		al, 4Bh		; arrow left key
 		jne		process_input_right
 		sub		POSx, 2h
 		jmp		process_input_loop
 
 	process_input_right:
-		cmp		al,4Dh		; arrow right key
+		cmp		al, 4Dh		; arrow right key
 		jne		process_input_read_character
 		add		POSx, 2h
 		jmp		process_input_loop
@@ -1043,12 +1038,10 @@ process_input	PROC
 		cmp		ah, constCor
 		jne		process_input_unincrement_invalid
 		add		invalid_counter, 1
-		; add		presses_since_last, 1
 		jmp		process_input_select_character_cont
 
 		process_input_unincrement_invalid:
 		sub		invalid_counter, 1
-		; sub		presses_since_last, 1
 
 	process_input_select_character_cont:
 		pop	 	dx
@@ -1481,7 +1474,7 @@ get_random proc near
 	mov		ax, [bp+4]
 	mov		[bp+2], ax
 
-	mov		ah,00h
+	mov		ah, 00h
 	int		1ah
 
 	add		dx, ultimo_num_aleat
@@ -1505,7 +1498,7 @@ get_random proc near
 get_random endp
 
 fill_board_with_random_chars PROC
-		mov cx, 132 		; 132 passes of the main loop are needed to fill current sized board.
+		mov 	cx, 132 		; 132 passes of the main loop are needed to fill current sized board.
 
 	fill_board_with_random_chars_main_loop:
 		call	get_random
@@ -1543,10 +1536,10 @@ fill_board_with_random_chars ENDP
 ;########################################################################
 Main    Proc
 
-		mov		ax,dseg
-		mov		ds,ax
-		mov		ax,0B800h
-		mov		es,ax
+		mov		ax, dseg
+		mov		ds, ax
+		mov		ax, 0B800h
+		mov		es, ax
 
 		mov		bl, cor
 		not		bl
@@ -1559,15 +1552,15 @@ Main    Proc
 
 		call 	clear_screen
 		call	process_file
-		goto_xy	0,0
-		; call	fill_board_with_random_chars
+		goto_xy	0, 0
+		call	fill_board_with_random_chars
 
 		mov 	POSy, 1
 		mov		POSx, 2
 
 		call	process_input
-		goto_xy	0,22
-		mov		ah,4ch
+		goto_xy	0, 22
+		mov		ah, 4ch
 		int		21h
 Main	endp
 cseg	ends
